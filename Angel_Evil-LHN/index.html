@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title></title>
+	<link rel="stylesheet" type="text/css" href="css/bootstrap.css"/>
+	<link rel="stylesheet" type="text/css" href="css/bootstrap-theme.min.css"/>
+	<script src="js/jquery-3.4.1.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="js/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+	<script src="https://cdn.bootcss.com/layer/2.3/layer.js"></script>
+</head>
+<style>
+	body {
+		background-image: url("./img/background.jpg");
+	}
+</style>
+<script type="text/javascript">
+	function scanSMS(a){
+		var phone = a.innerHTML
+		var list = JSON.parse(localStorage.getItem("data")).data
+		for (var i = 0; i < list.length; i++) {
+			var sss = list[i]
+			if (sss.phone == phone) {
+				//alert("--------------------------------诈骗短信--------------------------------"+sss.sms)
+				alert("*诈骗手机号*："+phone+"\n\n"+"*短信内容*：\n"+sss.sms)
+				return;
+			}
+		}
+		//alert("--------------------诈骗短信--------------------"+content)
+	}
+	$(function(){
+		//页面初始化工作
+		if (localStorage.getItem("data") == null || localStorage.getItem("data") == "") {
+			$.ajax({
+				type:"GET",
+				url:"./source_data/phone.json",
+				async:false,
+				dataType:"json",
+				success:function(data){
+					localStorage.setItem("data",JSON.stringify(data))
+				},
+				error:function(){
+					layer.msg("get-local-json-error")
+				}
+			})
+		}
+		var data = JSON.parse(localStorage.getItem("data")).data
+		var smsList = document.getElementById("lhn").getElementsByTagName("a")
+		for (var i = 1; i < smsList.length; i++) {
+			var sms = smsList[i]
+			var num = Math.floor(Math.random()*(data.length-1))
+			sms.innerHTML = data[num].phone
+		}
+		//页面初始化工作
+		//按钮触发事件
+		$("#smsBtn").click(function(){
+			var wordStr = "中奖、转账、借钱、抽奖、抽中、特惠、豪礼、惊喜、最低价、充值、生病、急需用钱、异地消费、免费、优惠、手续费、发票、法院、传票、按摩、激情、小姐、升值、投资、保险、警察、公安局、检察院、警官、回复、银行卡、登录、信用卡、账号、消费、拨打、咨询热线、汇款"
+			var words = wordStr.split("、")
+			var sms = $("#sms").val().trim()
+			if (sms == "") {
+				layer.msg("请填入检测信息！")
+				$("#sms").focus()
+			}else{
+				layer.msg("诈骗短信识别中···")
+				let interval = setInterval(function(){
+					for (var i = 0; i < words.length; i++) {
+						if (sms.indexOf(words[i]) != -1) {
+							clearInterval(interval)
+							alert("***警告***\n\n"+"信息包含敏感词汇：“"+words[i]+"“\n\n该条信息可能为诈骗短信，请不要相信！！")
+							return;
+						}
+					}
+					clearInterval(interval)
+					alert("***检测结果***\n\n该短信未检测到敏感词汇信息，为正常短信内容，请放心了解短信内容！！！")
+					return;
+				},4000)
+			}
+		})
+		$("#phoneBtn").click(function(){
+			var phone = $("#phone").val().trim()
+			if(!(/^1[3456789]\d{9}$/.test(phone))){
+				layer.msg("手机号填写有误！");
+				$("#phone").focus()
+				return false; 
+			}else{
+				layer.msg("手机号识别中···")
+				let interval = setInterval(function(){
+					var data = JSON.parse(localStorage.getItem("data")).data
+					for (var i = 0; i < data.length; i++) {
+						if (phone == data[i].phone) {
+							clearInterval(interval)
+							alert("***检测手机号***："+phone+"\n\n****检测结果****：该手机号有诈骗历史记录，请勿相信该手机号发送的短信信息！！！")
+							return;
+						}
+					}
+					clearInterval(interval)
+					alert("***检测结果***\n\n手机号正常，请放心拨打！！！")
+					return;
+				},4000)
+			}
+		})
+	})
+</script>
+<body>
+	<div class="container">
+		<div class="row">
+			<ul class="list-inline" style="margin-top: 200px;">
+				<li>
+					<ul class="list-unstyled">
+						<li>
+							<textarea id="sms" value="" class="form-control" style="margin-bottom: 1px;resize: none;" placeholder="请输入要查询的短信..." rows="12" cols="43"></textarea>
+						</li><br>
+						<li>
+							<input type="button" id="smsBtn" class="btn" style="width: 350px;background-color: #2e9c37; color: white;" value="短 信 识 别" />
+						</li>
+					</ul>
+				</li>
+				<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
+				<li>
+					<ul class="list-unstyled">
+						<li style="align-items: center;">
+							<input type="text" style="bottom: auto;" placeholder="请输入要查询的手机号" id="phone" class="form-control">
+						</li><br>
+						<li>
+							<input type="button" id="phoneBtn" class="btn" style="width: 350px;background-color: #2e9c37; color: white;" value="手 机 号 识 别" />
+						</li>
+					</ul>
+				</li>
+				<li>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
+				<li>
+					<div id="lhn" class="list-group">
+					  <a href="#" class="list-group-item list-group-item-info">诈骗短信示例</a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-danger"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-warning"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-danger"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-warning"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-danger"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-warning"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-danger"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-warning"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-danger"></a>
+					  <a href="#" onclick="scanSMS(this)" class="list-group-item list-group-item-warning"></a>
+					</div>
+				</li>
+			</ul>
+		</div>
+	</div>
+</body>
+</html>
